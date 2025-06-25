@@ -16,7 +16,7 @@ type SlotResponse struct {
 	DoctorID  uint      `json:"doctor_id"`
 	StartTime time.Time `json:"start_time"`
 	EndTime   time.Time `json:"end_time"`
-	Booked    bool      `json:"booked"`
+	Status    string    `json:"status"`
 }
 
 func toSlotResponse(slot models.AppointmentSlot) SlotResponse {
@@ -25,7 +25,7 @@ func toSlotResponse(slot models.AppointmentSlot) SlotResponse {
 		DoctorID:  slot.DoctorID,
 		StartTime: slot.StartTime.In(time.FixedZone("Asia/Bangkok", 7*60*60)),
 		EndTime:   slot.EndTime.In(time.FixedZone("Asia/Bangkok", 7*60*60)),
-		Booked:    slot.Booked,
+		Status:    slot.Status,
 	}
 }
 
@@ -77,7 +77,7 @@ func GenerateSlots(doctorID uint, date string) ([]SlotResponse, error) {
 					DoctorID:  doctorID,
 					StartTime: slotStart,
 					EndTime:   slotEnd,
-					Booked:    false,
+					Status:    "AVAILABLE",
 				}
 				config.DB.Create(&newSlot)
 				generated = append(generated, toSlotResponse(newSlot))
@@ -154,7 +154,7 @@ func AvailableSlots(doctorID uint, dateStr string) ([]SlotResponse, error) {
 
 	
 	var available []models.AppointmentSlot
-	err = config.DB.Where("doctor_id = ? AND start_time >= ? AND start_time < ? AND booked = ?", doctorID, startOfDay, endOfDay, false).
+	err = config.DB.Where("doctor_id = ? AND start_time >= ? AND start_time < ? AND status = ?", doctorID, startOfDay, endOfDay, "AVAILABLE").
 		Order("start_time asc").Find(&available).Error
 	if err != nil {
 		return nil, err

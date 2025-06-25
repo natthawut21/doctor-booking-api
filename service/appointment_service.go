@@ -1,4 +1,3 @@
-// service/appointment_service.go
 package service
 
 import (
@@ -9,8 +8,8 @@ import (
 )
 
 type BookRequest struct {
-	DoctorID uint   `json:"doctor_id"`
-	SlotID   uint   `json:"slot_id"`
+	DoctorID uint   `json:"doctorId"`
+	SlotID   uint   `json:"slotId"`
 	Username string `json:"username"` // หา Patient จาก Username
 }
 
@@ -22,7 +21,7 @@ func BookAppointment(req BookRequest) (uint, error) {
 	}
 
 	// 2. เช็คว่า slot ถูกจองแล้วหรือยัง
-	if slot.Booked {
+	if slot.Status == "CONFIRMED" {
 		return 0, errors.New("slot already booked")
 	}
 
@@ -38,9 +37,11 @@ func BookAppointment(req BookRequest) (uint, error) {
 		return 0, errors.New("patient not found")
 	}
 
-	// 5. จอง slot และสร้าง appointment
-	slot.Booked = true
-	config.DB.Save(&slot)
+	// 5. อัปเดตสถานะ slot และสร้าง appointment
+	slot.Status = "CONFIRMED"
+	if err := config.DB.Save(&slot).Error; err != nil {
+		return 0, errors.New("failed to update slot status")
+	}
 
 	appointment := models.Appointment{
 		DoctorID:  doctor.ID,
@@ -58,6 +59,10 @@ func BookAppointment(req BookRequest) (uint, error) {
 
 func ListAppointments() ([]models.Appointment, error) {
 	var appointments []models.Appointment
-	err := config.DB.Preload("Doctor").Preload("Patient").Preload("Slot").Find(&appointments).Error
+	err := config.DB.
+		Preload("Doctor").
+		Preload("Patient").
+		Preload("Slot").
+		Find(&appointments).Error
 	return appointments, err
 }
