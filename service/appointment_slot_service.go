@@ -12,26 +12,41 @@ import (
 
 
 type SlotResponse struct {
-	ID        uint      `json:"id"`
-	DoctorID  uint      `json:"doctor_id"`
+	ID        int64      `json:"id"`
+	DoctorID  int64      `json:"doctor_id"`
 	StartTime time.Time `json:"start_time"`
 	EndTime   time.Time `json:"end_time"`
 	Status    string    `json:"status"`
+	ChangedAt  *time.Time `json:"changed_at,omitempty"` // เวลาที่สถานะล่าสุดถูกเปลี่ยน (nullable)
 }
 
 func toSlotResponse(slot models.AppointmentSlot) SlotResponse {
+
+	var changedAt *time.Time = nil
+
+	// ถ้าสถานะคือ PENDING หรือ CONFIRMED
+	if slot.Status == "PENDING" || slot.Status == "CONFIRMED" || slot.Status == "CANCELED" {
+		var latestHistory models.SlotStatusHistory
+		err := config.DB.Where("slot_id = ? AND new_status = ?", slot.ID, slot.Status).
+			Order("changed_at desc").
+			First(&latestHistory).Error
+		if err == nil {
+			changedAt = &latestHistory.ChangedAt
+		}
+	}
 	return SlotResponse{
 		ID:        slot.ID,
 		DoctorID:  slot.DoctorID,
 		StartTime: slot.StartTime.In(time.FixedZone("Asia/Bangkok", 7*60*60)),
 		EndTime:   slot.EndTime.In(time.FixedZone("Asia/Bangkok", 7*60*60)),
 		Status:    slot.Status,
+		ChangedAt: changedAt,
 	}
 }
 
 var location, _ = time.LoadLocation("Asia/Bangkok")
 
-func GenerateSlots(doctorID uint, date string) ([]SlotResponse, error) {
+func GenerateSlots(doctorID int64, date string) ([]SlotResponse, error) {
 	localDate, err := time.ParseInLocation("2006-01-02", date, location)
 	if err != nil {
 		return nil, errors.New("Invalid date format, expected yyyy-MM-dd")
@@ -93,7 +108,7 @@ func GenerateSlots(doctorID uint, date string) ([]SlotResponse, error) {
 	return generated, nil
 }
 
-func ShowAllSlots(doctorID uint, dateStr string) ([]SlotResponse, error) {
+func ShowAllSlots(doctorID int64, dateStr string) ([]SlotResponse, error) {
 	localDate, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
 		return nil, errors.New("Invalid date format, expected yyyy-MM-dd")
@@ -129,7 +144,7 @@ func ShowAllSlots(doctorID uint, dateStr string) ([]SlotResponse, error) {
 }
 
 
-func AvailableSlots(doctorID uint, dateStr string) ([]SlotResponse, error) {
+func AvailableSlots(doctorID int64, dateStr string) ([]SlotResponse, error) {
 	localDate, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
 		return nil, errors.New("Invalid date format, expected yyyy-MM-dd")
@@ -169,7 +184,7 @@ func AvailableSlots(doctorID uint, dateStr string) ([]SlotResponse, error) {
 	return responses, nil
 }
 
-func UpdateSlotStatus(slotID uint, newStatus string, changedBy string) error {
+func UpdateSlotStatus(slotID int64, newStatus string, changedBy string) error {
 	var slot models.AppointmentSlot
 	if err := config.DB.First(&slot, slotID).Error; err != nil {
 		return errors.New("slot not found")

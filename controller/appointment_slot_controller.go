@@ -18,7 +18,7 @@ func GenerateSlots(c *gin.Context) {
 		return
 	}
 
-	slots, err := service.GenerateSlots(uint(doctorID), date)
+	slots, err := service.GenerateSlots(int64(doctorID), date)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -30,13 +30,13 @@ func ShowAllSlots(c *gin.Context) {
 	doctorIDStr := c.Query("doctorId")
 	dateStr := c.Query("date")
 
-	doctorID, err := strconv.ParseUint(doctorIDStr, 10, 64)
+	doctorID, err := strconv.ParseInt(doctorIDStr, 10, 64)
 	if err != nil || dateStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing or invalid doctorId or date"})
 		return
 	}
 
-	slots, err := service.ShowAllSlots(uint(doctorID), dateStr)
+	slots, err := service.ShowAllSlots(int64(doctorID), dateStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -48,13 +48,13 @@ func AvailableSlots(c *gin.Context) {
 	doctorIDStr := c.Query("doctorId")
 	dateStr := c.Query("date")
 
-	doctorID, err := strconv.ParseUint(doctorIDStr, 10, 64)
+	doctorID, err := strconv.ParseInt(doctorIDStr, 10, 64)
 	if err != nil || dateStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing or invalid doctorId or date"})
 		return
 	}
 
-	slots, err := service.AvailableSlots(uint(doctorID), dateStr)
+	slots, err := service.AvailableSlots(int64(doctorID), dateStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -83,7 +83,7 @@ func UpdateSlotStatus(c *gin.Context) {
 		return
 	}
 
-	err = service.UpdateSlotStatus(uint(slotID), req.Status, req.ChangedBy)
+	err = service.UpdateSlotStatus(int64(slotID), req.Status, req.ChangedBy)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

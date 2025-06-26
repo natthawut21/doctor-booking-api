@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Doctor struct {
-	ID                 uint      `gorm:"primaryKey" json:"id"`
+	ID                 int64      `gorm:"primaryKey" json:"id"`
 	Version   int    `gorm:"column=version" json:"version"`
 	Name               string    `json:"name"`
 	Specialty          string    `json:"specialty"`

@@ -8,12 +8,12 @@ import (
 )
 
 type BookRequest struct {
-	DoctorID uint   `json:"doctorId"`
-	SlotID   uint   `json:"slotId"`
+	DoctorID int64   `json:"doctorId"`
+	SlotID   int64   `json:"slotId"`
 	Username string `json:"username"` // หา Patient จาก Username
 }
 
-func BookAppointment(req BookRequest) (uint, error) {
+func BookAppointment(req BookRequest) (int64, error) {
 	// 1. หา Slot
 	var slot models.AppointmentSlot
 	if err := config.DB.First(&slot, req.SlotID).Error; err != nil {
@@ -40,7 +40,7 @@ func BookAppointment(req BookRequest) (uint, error) {
 	// 5. อัปเดตสถานะ slot และสร้าง appointment
 		
 	slot.Status = "CONFIRMED"
-	
+
 	if err := config.DB.Save(&slot).Error; err != nil {
 		return 0, errors.New("failed to update slot status")
 	}

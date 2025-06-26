@@ -3,10 +3,10 @@ package models
 import "time"
 
 type AppointmentSlot struct {
-	ID        uint       `gorm:"primaryKey" json:"id"`
+	ID        int64       `gorm:"primaryKey" json:"id"`
 	Version   int        `gorm:"column=version" json:"version"`
 
-	DoctorID  uint       `json:"doctor_id"`
+	DoctorID  int64       `json:"doctor_id"`
 	Doctor    Doctor     `gorm:"foreignKey:DoctorID" json:"-"`
 
 	StartTime time.Time  `json:"start_time"`

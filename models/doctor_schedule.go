@@ -1,9 +1,9 @@
 package models
 
 type DoctorSchedule struct {
-	ID        uint   `gorm:"primaryKey" json:"id"`
+	ID        int64   `gorm:"primaryKey" json:"id"`
 	Version   int    `gorm:"column=version" json:"version"`
-	DoctorID  uint   `json:"doctor_id"` // FK ไปยัง Doctor
+	DoctorID  int64   `json:"doctor_id"` // FK ไปยัง Doctor
 	Doctor    Doctor `gorm:"foreignKey:DoctorID" json:"-"`
 
 	DayOfWeek string `json:"day_of_week"` // "MONDAY", "TUESDAY", ...

@@ -14,7 +14,7 @@ func main() {
 
 
 	config.ConnectDatabase()
-	// ✅ AutoMigrate ตารางทั้งหมดที่ใช้ในระบบ
+	
 	config.DB.AutoMigrate(
 		&models.Doctor{},
 		&models.User{},
@@ -22,6 +22,17 @@ func main() {
 		&models.Appointment{},
 		&models.SlotStatusHistory{},
 	)
+// 	if err := config.DB.AutoMigrate(
+// 			&models.Doctor{},
+// 	 	&models.User{},
+// 	 	&models.AppointmentSlot{},
+// 	 	&models.Appointment{},
+// 	 	&models.SlotStatusHistory{},); err != nil {
+//     log.Fatalf("❌ Failed to migrate: %v", err)
+// }
+
+	
+	
 
 	r := router.SetupRouter()
 	r.Run(":8181")
