@@ -169,7 +169,7 @@ func AvailableSlots(doctorID uint, dateStr string) ([]SlotResponse, error) {
 	return responses, nil
 }
 
-func UpdateSlotStatus(slotID uint, newStatus string) error {
+func UpdateSlotStatus(slotID uint, newStatus string, changedBy string) error {
 	var slot models.AppointmentSlot
 	if err := config.DB.First(&slot, slotID).Error; err != nil {
 		return errors.New("slot not found")
@@ -181,13 +181,30 @@ func UpdateSlotStatus(slotID uint, newStatus string) error {
 		"CONFIRMED": true,
 		"CANCELED":  true,
 	}
-	if !validStatuses[strings.ToUpper(newStatus)] {
+	newStatus = strings.ToUpper(newStatus)
+	if !validStatuses[newStatus] {
 		return errors.New("invalid status")
 	}
 
-	slot.Status = strings.ToUpper(newStatus)
-	return config.DB.Save(&slot).Error
+	oldStatus := slot.Status
+	slot.Status = newStatus
+
+	//  Save slot update
+	if err := config.DB.Save(&slot).Error; err != nil {
+		return err
+	}
+
+	//  Save audit log
+	history := models.SlotStatusHistory{
+		SlotID:    slot.ID,
+		OldStatus: oldStatus,
+		NewStatus: newStatus,
+		ChangedBy: changedBy,
+		ChangedAt: time.Now(),
+	}
+	return config.DB.Create(&history).Error
 }
+
 
 
 
