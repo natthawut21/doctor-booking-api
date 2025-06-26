@@ -20,9 +20,13 @@ func SetupRouter() *gin.Engine {
 	r.POST("/slots/generate", controller.GenerateSlots)
 	r.GET("/slots/all", controller.ShowAllSlots)
 	r.GET("/slots/available", controller.AvailableSlots)
+	r.GET("/slots/booked", controller.BookedSlots)
+	r.GET("/slots/:id/info", controller.GetSlotInfo)
+
 	r.PUT("/slots/:id/status", controller.UpdateSlotStatus)
 
 	r.POST("/appointments/book", controller.BookAppointment)
+
 	r.GET("/appointments", controller.ListAppointments)
 	return r
 }

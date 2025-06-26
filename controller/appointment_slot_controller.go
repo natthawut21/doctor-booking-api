@@ -61,6 +61,23 @@ func AvailableSlots(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, slots)
 }
+func BookedSlots(c *gin.Context) {
+	doctorIDStr := c.Query("doctorId")
+	dateStr := c.Query("date")
+
+	doctorID, err := strconv.ParseInt(doctorIDStr, 10, 64)
+	if err != nil || dateStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing or invalid doctorId or date"})
+		return
+	}
+
+	slots, err := service.BookedSlots(int64(doctorID), dateStr)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, slots)
+}
 
 
 type UpdateStatusRequest struct {
@@ -92,9 +109,19 @@ func UpdateSlotStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Slot status updated"})
 }
 
-// curl --location --request PUT 'http://localhost:8181/slots/1643/status' \
-// --header 'Content-Type: application/json' \
-// --data '{
-//   "status": "CANCELED",
-//   "changed_by": "admin1"
-// }'
+func GetSlotInfo(c *gin.Context) {
+	idStr := c.Param("id")
+	slotID, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid slot ID"})
+		return
+	}
+
+	result, err := service.GetSlotInfo(slotID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}

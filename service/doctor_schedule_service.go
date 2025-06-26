@@ -1,12 +1,15 @@
 package service
 
 import (
+	"doctor-booking-api/config"
 	"doctor-booking-api/models"
 	"doctor-booking-api/repository"
 	"errors"
 	"strings"
 	"time"
+	
 )
+
 
 // ตรวจสอบและบันทึกตารางใหม่
 func SaveSchedule(request models.DoctorSchedule) (models.DoctorSchedule, error) {
@@ -36,7 +39,24 @@ func UpdateScheduleByID(scheduleID uint, updated models.DoctorSchedule) (models.
 
 // ดึงตารางทั้งหมดของหมอ
 func GetSchedulesByDoctorID(doctorID uint) ([]models.DoctorSchedule, error) {
-	return repository.GetSchedulesByDoctorID(doctorID)
+	var schedules []models.DoctorSchedule
+	err := config.DB.
+		Where("doctor_id = ?", doctorID).
+		Order(`
+			CASE day_of_week
+				WHEN 'SUNDAY' THEN 1
+				WHEN 'MONDAY' THEN 2
+				WHEN 'TUESDAY' THEN 3
+				WHEN 'WEDNESDAY' THEN 4
+				WHEN 'THURSDAY' THEN 5
+				WHEN 'FRIDAY' THEN 6
+				WHEN 'SATURDAY' THEN 7
+			END ASC,
+			start_time ASC
+		`).
+		Find(&schedules).Error
+
+	return schedules, err
 }
 
 // ลบตารางของหมอแบบเฉพาะเจาะจง

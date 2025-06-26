@@ -19,7 +19,14 @@ type SlotResponse struct {
 	Status    string    `json:"status"`
 	ChangedAt  *time.Time `json:"changed_at,omitempty"` // เวลาที่สถานะล่าสุดถูกเปลี่ยน (nullable)
 }
-
+type SlotWithHistoryResponse struct {
+	ID        int64      `json:"id"`
+	DoctorID  int64      `json:"doctor_id"`
+	StartTime time.Time  `json:"start_time"`
+	EndTime   time.Time  `json:"end_time"`
+	Status    string     `json:"status"`
+	History   []models.SlotStatusHistory `json:"history"`
+}
 func toSlotResponse(slot models.AppointmentSlot) SlotResponse {
 
 	var changedAt *time.Time = nil
@@ -183,7 +190,45 @@ func AvailableSlots(doctorID int64, dateStr string) ([]SlotResponse, error) {
 
 	return responses, nil
 }
+func BookedSlots(doctorID int64, dateStr string) ([]SlotResponse, error) {
+	localDate, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return nil, errors.New("Invalid date format, expected yyyy-MM-dd")
+	}
 
+	startOfDay := time.Date(localDate.Year(), localDate.Month(), localDate.Day(), 0, 0, 0, 0, location)
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	// ตรวจสอบว่ามี slot แล้วหรือยัง
+	var existing []models.AppointmentSlot
+	err = config.DB.Where("doctor_id = ? AND start_time >= ? AND start_time < ?", doctorID, startOfDay, endOfDay).
+		Find(&existing).Error
+	if err != nil {
+		return nil, err
+	}
+	if len(existing) == 0 {
+		_, err := GenerateSlots(doctorID, dateStr)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	
+	var available []models.AppointmentSlot
+	err = config.DB.Where("doctor_id = ? AND start_time >= ? AND start_time < ? AND status = ?", doctorID, startOfDay, endOfDay, "CONFIRMED").
+		Order("start_time asc").Find(&available).Error
+	if err != nil {
+		return nil, err
+	}
+
+	
+	var responses []SlotResponse
+	for _, s := range available {
+		responses = append(responses, toSlotResponse(s))
+	}
+
+	return responses, nil
+}
 func UpdateSlotStatus(slotID int64, newStatus string, changedBy string) error {
 	var slot models.AppointmentSlot
 	if err := config.DB.First(&slot, slotID).Error; err != nil {
@@ -220,6 +265,34 @@ func UpdateSlotStatus(slotID int64, newStatus string, changedBy string) error {
 	return config.DB.Create(&history).Error
 }
 
+func GetSlotInfo(slotID int64) (*SlotWithHistoryResponse, error) {
+	var slot models.AppointmentSlot
+	if err := config.DB.First(&slot, slotID).Error; err != nil {
+		return nil, errors.New("slot not found")
+	}
 
+	var history []models.SlotStatusHistory
+	err := config.DB.
+		Where("slot_id = ?", slotID).
+		Order("changed_at desc").
+		Find(&history).Error
+	if err != nil {
+		return nil, errors.New("failed to load slot history")
+	}
 
+	// ✅ แปลง ChangedAt ให้อยู่ใน timezone Asia/Bangkok
+	location, _ := time.LoadLocation("Asia/Bangkok")
+	for i := range history {
+		history[i].ChangedAt = history[i].ChangedAt.In(location)
+	}
 
+	result := &SlotWithHistoryResponse{
+		ID:        slot.ID,
+		DoctorID:  slot.DoctorID,
+		StartTime: slot.StartTime.In(location),
+		EndTime:   slot.EndTime.In(location),
+		Status:    slot.Status,
+		History:   history,
+	}
+	return result, nil
+}
