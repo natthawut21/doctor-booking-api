@@ -38,7 +38,9 @@ func BookAppointment(req BookRequest) (uint, error) {
 	}
 
 	// 5. อัปเดตสถานะ slot และสร้าง appointment
+		
 	slot.Status = "CONFIRMED"
+	
 	if err := config.DB.Save(&slot).Error; err != nil {
 		return 0, errors.New("failed to update slot status")
 	}

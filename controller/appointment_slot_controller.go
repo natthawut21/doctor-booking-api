@@ -62,3 +62,39 @@ func AvailableSlots(c *gin.Context) {
 	c.JSON(http.StatusOK, slots)
 }
 
+
+type UpdateStatusRequest struct {
+	Status string `json:"status"`
+	ChangedBy string `json:"changed_by"` // เช่น username
+}
+
+
+func UpdateSlotStatus(c *gin.Context) {
+	idParam := c.Param("id")
+	slotID, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid slot ID"})
+		return
+	}
+
+	var req UpdateStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	err = service.UpdateSlotStatus(uint(slotID), req.Status, req.ChangedBy)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Slot status updated"})
+}
+
+// curl --location --request PUT 'http://localhost:8181/slots/1643/status' \
+// --header 'Content-Type: application/json' \
+// --data '{
+//   "status": "CANCELED",
+//   "changed_by": "admin1"
+// }'

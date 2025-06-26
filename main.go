@@ -20,6 +20,7 @@ func main() {
 		&models.User{},
 		&models.AppointmentSlot{},
 		&models.Appointment{},
+		&models.SlotStatusHistory{},
 	)
 
 	r := router.SetupRouter()

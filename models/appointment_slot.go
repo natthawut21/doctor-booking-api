@@ -11,11 +11,10 @@ type AppointmentSlot struct {
 
 	StartTime time.Time  `json:"start_time"`
 	EndTime   time.Time  `json:"end_time"`
-	//Booked    bool       `json:"booked"`
-	// จาก boolean → เป็น enum status แทน
-	Status string `gorm:"type:enum('AVAILABLE','PENDING','CONFIRMED','CANCELED'); default:'AVAILABLE'" json:"status"`
-
 	
+	// จาก boolean → เป็น enum status แทน
+	//Status string `gorm:"type:enum('AVAILABLE','PENDING','CONFIRMED','CANCELED'); default:'AVAILABLE'" json:"status"`
+	Status string `gorm:"default:'AVAILABLE'" json:"status"`
 }
 
 // กำหนดชื่อ table ให้ตรงกับ Grails

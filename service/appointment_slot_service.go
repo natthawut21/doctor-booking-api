@@ -169,5 +169,25 @@ func AvailableSlots(doctorID uint, dateStr string) ([]SlotResponse, error) {
 	return responses, nil
 }
 
+func UpdateSlotStatus(slotID uint, newStatus string) error {
+	var slot models.AppointmentSlot
+	if err := config.DB.First(&slot, slotID).Error; err != nil {
+		return errors.New("slot not found")
+	}
+
+	validStatuses := map[string]bool{
+		"AVAILABLE": true,
+		"PENDING":   true,
+		"CONFIRMED": true,
+		"CANCELED":  true,
+	}
+	if !validStatuses[strings.ToUpper(newStatus)] {
+		return errors.New("invalid status")
+	}
+
+	slot.Status = strings.ToUpper(newStatus)
+	return config.DB.Save(&slot).Error
+}
+
 
 
